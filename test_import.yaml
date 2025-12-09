@@ -1,0 +1,27 @@
+shop: Тестовый магазин
+categories:
+  - id: 1
+    name: Смартфоны
+  - id: 2
+    name: Аксессуары
+goods:
+  - id: 1001
+    category: 1
+    model: test/model
+    name: Тестовый смартфон
+    price: 50000
+    price_rrc: 55000
+    quantity: 10
+    parameters:
+      "Диагональ": "6.1"
+      "Цвет": "черный"
+  - id: 1002
+    category: 2
+    model: accessory/model
+    name: Чехол для телефона
+    price: 1000
+    price_rrc: 1500
+    quantity: 50
+    parameters:
+      "Материал": "силикон"
+      "Цвет": "синий"

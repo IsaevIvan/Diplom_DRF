@@ -133,6 +133,19 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'procurement.throttles.RegisterThrottle',
+        'procurement.throttles.LoginThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day',
+        'register': '5/hour',    # 5 регистраций в час с одного IP
+        'login': '10/hour',      # 10 попыток входа в час на email
+        'burst': '30/minute',    # 30 запросов в минуту
+    }
 }
 
 # CORS settings

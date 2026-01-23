@@ -21,19 +21,20 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
 INSTALLED_APPS = [
+    'baton',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'rest_framework',
     'rest_framework.authtoken',
     'django_rest_passwordreset',
     'corsheaders',
     'drf_yasg',
     'procurement',
+    'baton.autodiscover',  # Добавляем autodiscover в конец
 ]
 
 MIDDLEWARE = [
@@ -177,3 +178,32 @@ SWAGGER_SETTINGS = {
         }
     }
 }
+
+
+BATON = {
+    'SITE_HEADER': 'Diplom Project DRF',
+    'SITE_TITLE': 'Админ-панель закупок',
+    'INDEX_TITLE': 'Управление системой закупок',
+    'SUPPORT_HREF': 'mailto:devdreamer@yandex.com',
+    'COPYRIGHT': '© 2024 Diplom Project DRF',
+    'POWERED_BY': '<a href="https://github.com/IsaevIvan">Isaev Ivan</a>',
+    'CONFIRM_UNSAVED_CHANGES': True,
+    'SHOW_MULTIPART_UPLOADING': True,
+    'ENABLE_IMAGES_PREVIEW': True,
+    'CHANGELIST_FILTERS_IN_MODAL': True,
+    'CHANGELIST_FILTERS_ALWAYS_OPEN': False,
+    'CHANGELIST_FILTERS_FORM': True,
+    'MENU_ALWAYS_COLLAPSED': False,
+    'MENU_TITLE': 'Меню',
+    'GRAVATAR_DEFAULT_IMG': 'retro',
+    'GRAVATAR_ENABLED': False,
+    'FORCE_THEME': None,
+    'MESSAGES_TOASTS': True,
+}
+
+# Импортируем меню
+try:
+    from procurement.baton_config import BATON_CONFIG
+    BATON.update(BATON_CONFIG)
+except ImportError:
+    pass

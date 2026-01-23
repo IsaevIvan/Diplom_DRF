@@ -11,10 +11,11 @@ def home_view(request):
     return HttpResponse("""
     <h1>Diplom Project DRF</h1>
     <p><a href="/api/v1/">API</a> | <a href="/admin/">Admin</a> | <a href="/swagger/">Swagger</a></p>
+    <p><strong>Админка теперь с django-baton!</strong></p>
     """)
 
 
-# Swagger схема (МИНИМАЛЬНАЯ)
+# Swagger схема
 schema_view = get_schema_view(
     openapi.Info(
         title="Diplom Project API",
@@ -27,10 +28,16 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', home_view, name='home'),
+
+    # Baton URLs
+    path('admin/', include('baton.urls')),
+
+    # Стандартная админка
     path('admin/', admin.site.urls),
+
     path('api/v1/', include('procurement.urls')),
 
-    # Swagger (ВСЕГО 3 СТРОКИ)
+    # Swagger
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='redoc'),
 ]

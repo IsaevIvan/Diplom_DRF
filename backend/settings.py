@@ -252,3 +252,47 @@ if DEBUG:
     print(f"   - Хост: {REDIS_HOST}")
     print(f"   - Celery: {CELERY_BROKER_URL}")
     print(f"   - Кэш: {CACHES['default']['LOCATION']}")
+
+
+# ==================== YANDEX OAUTH НАСТРОЙКИ ====================
+INSTALLED_APPS += [
+    'social_django',  # OAuth аутентификация
+]
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.yandex.YandexOAuth2',  # Яндекс OAuth
+    'django.contrib.auth.backends.ModelBackend',  # Стандартный бэкенд Django
+)
+
+# Яндекс OAuth настройки
+SOCIAL_AUTH_YANDEX_OAUTH2_KEY = os.getenv('YANDEX_OAUTH_KEY', '')
+SOCIAL_AUTH_YANDEX_OAUTH2_SECRET = os.getenv('YANDEX_OAUTH_SECRET', '')
+SOCIAL_AUTH_YANDEX_OAUTH2_SCOPE = ['login:email', 'login:info']
+
+# URL для редиректа
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/api/v1/user/oauth/success/'
+SOCIAL_AUTH_LOGIN_ERROR_URL = '/api/v1/user/oauth/error/'
+SOCIAL_AUTH_NEW_USER_REDIRECT_URL = '/api/v1/user/oauth/success/'
+
+# Настройки для работы с кастомной User моделью
+SOCIAL_AUTH_USER_MODEL = 'procurement.User'
+SOCIAL_AUTH_USERNAME_IS_FULL_EMAIL = True
+
+# Pipeline для обработки данных пользователя
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.auth_allowed',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+    # Кастомный шаг для генерации DRF токена
+    'procurement.oauth_pipeline.create_drf_token',
+)
+
+# Настройки сессий для OAuth
+SOCIAL_AUTH_RAISE_EXCEPTIONS = False
+SOCIAL_AUTH_URLOPEN_TIMEOUT = 10

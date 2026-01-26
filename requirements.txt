@@ -12,3 +12,4 @@ psycopg2-binary==2.9.5
 drf-yasg==1.21.7
 django-baton==5.0.7
 
+django-redis==5.4.0

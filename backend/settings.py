@@ -2,6 +2,7 @@
 Django settings for backend project.
 """
 import os
+import socket
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -34,7 +35,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_yasg',
     'procurement',
-    'baton.autodiscover',  # Добавляем autodiscover в конец
+    'baton.autodiscover',
 ]
 
 MIDDLEWARE = [
@@ -68,7 +69,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-# Database
+# ==================== БАЗА ДАННЫХ ====================
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
@@ -79,6 +80,57 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
+
+# ==================== REDIS НАСТРОЙКИ ====================
+# Определяем, находимся ли мы в Docker окружении
+def is_running_in_docker():
+    """Проверяем, запущено ли приложение в Docker"""
+    try:
+        # Пробуем разрешить имя сервиса redis
+        socket.gethostbyname('redis')
+        return True
+    except socket.gaierror:
+        return False
+
+# Определяем хост Redis в зависимости от окружения
+REDIS_HOST = 'redis' if is_running_in_docker() else 'localhost'
+print(f"🔧 Redis хост: {REDIS_HOST}")
+
+# ==================== CELERY НАСТРОЙКИ ====================
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:6379/0'
+CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Moscow'
+
+# Для разработки - синхронный режим (отладочный)
+CELERY_TASK_ALWAYS_EAGER = False
+
+print(f"🔧 Celery настроен: BROKER_URL={CELERY_BROKER_URL}")
+
+# ==================== REDIS КЭШИРОВАНИЕ ====================
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"redis://{REDIS_HOST}:6379/1",  # Используем базу 1 для кэша
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "MAX_ENTRIES": 1000,  # Максимум записей в кэше
+            "CULL_FREQUENCY": 3,   # Удалять 1/3 записей при достижении лимита
+            "SOCKET_CONNECT_TIMEOUT": 5,  # Таймаут подключения
+            "SOCKET_TIMEOUT": 5,  # Таймаут операций
+        },
+        "KEY_PREFIX": "diplom",  # Префикс для всех ключей кэша
+    }
+}
+
+# Время жизни кэша по умолчанию (в секундах)
+CACHE_TTL = 60 * 15  # 15 минут
+
+# Кэширование сессий (опционально, но полезно)
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -115,7 +167,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 AUTH_USER_MODEL = 'procurement.User'
 
 # Email settings
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Для разработки
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.mail.ru')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '465'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
@@ -155,20 +207,6 @@ CORS_ALLOW_ALL_ORIGINS = True  # Для разработки, в production ну
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Адрес Redis
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
-
-# Для разработки - синхронный режим (отладочный)
-CELERY_TASK_ALWAYS_EAGER = False  # Если DEBUG=True, задачи выполняются сразу
-
-print(f"CELERY настроен: BROKER_URL={CELERY_BROKER_URL}")
-
-
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Token': {
@@ -179,7 +217,7 @@ SWAGGER_SETTINGS = {
     }
 }
 
-
+# Baton admin panel settings
 BATON = {
     'SITE_HEADER': 'Diplom Project DRF',
     'SITE_TITLE': 'Админ-панель закупок',
@@ -207,3 +245,10 @@ try:
     BATON.update(BATON_CONFIG)
 except ImportError:
     pass
+
+# ==================== ДОПОЛНИТЕЛЬНЫЕ ПРОВЕРКИ ====================
+if DEBUG:
+    print(f"🔧 Настройки Redis:")
+    print(f"   - Хост: {REDIS_HOST}")
+    print(f"   - Celery: {CELERY_BROKER_URL}")
+    print(f"   - Кэш: {CACHES['default']['LOCATION']}")

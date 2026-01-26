@@ -12,6 +12,9 @@ from .models import User, Shop, Category, Product, ProductInfo, Parameter, Produ
 from .serializers import *
 from .services import send_order_confirmation_email, send_user_registration_email, send_order_status_email, \
     send_order_to_admin_email
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+
 
 
 # ==================== КОРНЕВОЙ API ENDPOINT ====================
@@ -172,6 +175,10 @@ class ProductListView(generics.ListAPIView):
     """Список товаров с фильтрацией"""
     serializer_class = ProductInfoSerializer
     permission_classes = [AllowAny]
+
+    @method_decorator(cache_page(60 * 15))  # Кэшируем на 15 минут
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = ProductInfo.objects.filter(shop__is_active=True, quantity__gt=0)
